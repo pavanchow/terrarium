@@ -2,11 +2,799 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>terrarium</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terrarium</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f5f5f7;
+    --panel: #ffffff;
+    --panel-2: #fafafa;
+    --text: #1d1d1f;
+    --muted: #6e6e73;
+    --border: #d2d2d7;
+    --accent: #0071e3;
+    --accent-text: #ffffff;
+    --ok: #1a8f3c;
+    --trap: #c4341c;
+    --meter-track: #e8e8ed;
+    --code-bg: #f5f5f7;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
+    --radius: 16px;
+    --mono: ui-monospace, "SF Mono", Menlo, Monaco, "Cascadia Code", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  }
+  /* Base body rule first, light by default. */
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    color: var(--text);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  /* Dark-mode overrides come AFTER the base body rule so text is never
+     light-on-white. Both the system preference and the manual toggle set the
+     same variables. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #000000;
+      --panel: #1c1c1e;
+      --panel-2: #161618;
+      --text: #f5f5f7;
+      --muted: #98989d;
+      --border: #38383a;
+      --accent: #0a84ff;
+      --ok: #30d158;
+      --trap: #ff6a5a;
+      --meter-track: #2c2c2e;
+      --code-bg: #0c0c0e;
+      --shadow: 0 1px 3px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #000000;
+    --panel: #1c1c1e;
+    --panel-2: #161618;
+    --text: #f5f5f7;
+    --muted: #98989d;
+    --border: #38383a;
+    --accent: #0a84ff;
+    --ok: #30d158;
+    --trap: #ff6a5a;
+    --meter-track: #2c2c2e;
+    --code-bg: #0c0c0e;
+    --shadow: 0 1px 3px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.4);
+  }
+  body[data-theme="dark"] { background: var(--bg); color: var(--text); }
+
+  header {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 64px 24px 24px;
+    text-align: center;
+  }
+  h1 {
+    font-size: clamp(40px, 7vw, 64px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+  }
+  .tagline {
+    font-size: clamp(19px, 3vw, 24px);
+    color: var(--muted);
+    max-width: 720px;
+    margin: 0 auto;
+    font-weight: 400;
+  }
+  .gap {
+    max-width: 760px;
+    margin: 28px auto 0;
+    font-size: 17px;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    box-shadow: var(--shadow);
+    text-align: left;
+  }
+  .gap strong { font-weight: 600; }
+
+  main { max-width: 1080px; margin: 0 auto; padding: 24px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 880px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+  }
+  .card h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 0 0 14px;
+    font-weight: 600;
+  }
+
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .preset {
+    font: inherit;
+    font-size: 13px;
+    padding: 7px 13px;
+    border-radius: 980px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .preset:hover { border-color: var(--accent); color: var(--accent); }
+
+  textarea {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 240px;
+    resize: vertical;
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--code-bg);
+    color: var(--text);
+    tab-size: 2;
+  }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 14px 0; }
+  @media (max-width: 520px) { .controls { grid-template-columns: 1fr; } }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .field input {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    color: var(--text);
+  }
+
+  .caps { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 16px; }
+  .cap {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 14px; font-family: var(--mono);
+    padding: 7px 12px; border-radius: 980px;
+    border: 1px solid var(--border); background: var(--panel-2);
+    cursor: pointer; user-select: none;
+  }
+  .cap input { accent-color: var(--accent); width: 15px; height: 15px; }
+
+  .run {
+    font: inherit; font-weight: 500; font-size: 16px;
+    width: 100%;
+    padding: 12px; border-radius: 12px; border: none;
+    background: var(--accent); color: var(--accent-text);
+    cursor: pointer; transition: filter 0.15s ease;
+  }
+  .run:hover { filter: brightness(1.05); }
+
+  .meter { margin-bottom: 16px; }
+  .meter .row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .meter .row .name { color: var(--muted); font-weight: 500; }
+  .meter .row .val { font-family: var(--mono); font-size: 12px; color: var(--text); }
+  .track {
+    height: 10px; border-radius: 980px; background: var(--meter-track); overflow: hidden;
+  }
+  .fill {
+    height: 100%; width: 0%; border-radius: 980px;
+    background: var(--accent); transition: width 0.35s ease, background 0.2s ease;
+  }
+  .fill.hot { background: var(--trap); }
+
+  .verdict {
+    font-family: var(--mono); font-size: 15px; padding: 14px 16px;
+    border-radius: 12px; margin-bottom: 14px; border: 1px solid var(--border);
+    background: var(--panel-2);
+    word-break: break-word;
+  }
+  .verdict.ok { border-color: var(--ok); color: var(--ok); }
+  .verdict.trap { border-color: var(--trap); color: var(--trap); }
+  .verdict .k { font-weight: 700; }
+
+  .output {
+    font-family: var(--mono); font-size: 13px; white-space: pre-wrap;
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px; min-height: 60px; color: var(--text);
+  }
+  .output .empty { color: var(--muted); }
+
+  .theme-toggle {
+    position: fixed; top: 18px; right: 18px;
+    font: inherit; font-size: 13px;
+    padding: 8px 14px; border-radius: 980px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text);
+    cursor: pointer; box-shadow: var(--shadow); z-index: 10;
+  }
+  footer { text-align: center; color: var(--muted); font-size: 13px; padding: 32px 24px 56px; }
+  footer a { color: var(--accent); text-decoration: none; }
+  code { font-family: var(--mono); background: var(--code-bg); padding: 1px 5px; border-radius: 5px; font-size: 0.92em; }
+</style>
 </head>
 <body>
-<h1>terrarium</h1>
-<p>Site coming soon.</p>
-<p><a href="https://github.com/pavanchow/terrarium">View repository</a></p>
+<button class="theme-toggle" id="themeToggle" type="button">Toggle theme</button>
+
+<header>
+  <h1>Terrarium</h1>
+  <p class="tagline">A sandbox that runs untrusted scripts without letting them hang you, eat your memory, blow your stack, or touch anything you did not hand them.</p>
+  <div class="gap">
+    <strong>The point.</strong> Writing an interpreter is easy. The hard part everyone skips is running someone else's code safely. Terrarium's real product is the enforcement: fuel bounds time, a memory budget bounds allocation, a depth cap bounds recursion, and capabilities gate every effect. For any input, the sandbox returns a value or a typed trap. It never hangs, never overflows, never escapes. This page runs a faithful port of that sandbox right in your browser.
+  </div>
+</header>
+
+<main>
+  <div class="grid">
+    <section class="card">
+      <h2>Script</h2>
+      <div class="presets" id="presets"></div>
+      <textarea id="src" spellcheck="false"></textarea>
+      <div class="controls">
+        <div class="field"><label for="fuel">Fuel (steps)</label><input id="fuel" type="number" value="200000" min="0"></div>
+        <div class="field"><label for="mem">Memory (bytes)</label><input id="mem" type="number" value="65536" min="0"></div>
+        <div class="field"><label for="depth">Call depth</label><input id="depth" type="number" value="128" min="1"></div>
+      </div>
+      <h2>Granted capabilities</h2>
+      <div class="caps" id="caps"></div>
+      <button class="run" id="run" type="button">Run in sandbox</button>
+    </section>
+
+    <section class="card">
+      <h2>Result</h2>
+      <div class="verdict" id="verdict">Run a script to see the outcome.</div>
+      <div class="meter">
+        <div class="row"><span class="name">Fuel used</span><span class="val" id="fuelVal">0 / 0</span></div>
+        <div class="track"><div class="fill" id="fuelFill"></div></div>
+      </div>
+      <div class="meter">
+        <div class="row"><span class="name">Memory charged</span><span class="val" id="memVal">0 / 0 bytes</span></div>
+        <div class="track"><div class="fill" id="memFill"></div></div>
+      </div>
+      <h2>Output (via print)</h2>
+      <div class="output" id="output"><span class="empty">No output. Grant print and call it to see lines here.</span></div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  Terrarium by Pavan Nallamothu ·
+  <a href="https://github.com/pavanchow/terrarium">github.com/pavanchow/terrarium</a>
+</footer>
+
+<script>
+"use strict";
+// A faithful JavaScript port of the Rust sandbox. Same traps, same gates, same
+// containment behavior. Integers are BigInt wrapped to 64 bits to match the
+// Rust i64 semantics. Meter numbers use their own constants, so exact counts
+// differ from Rust while every trap and result matches.
+
+const SLOT = 16;
+const FRAME_BYTES = 128;
+const EVAL_DEPTH_CAP = 3000; // safe under the browser call stack
+const BUILTINS = ["print", "input", "now", "len"];
+const I64_MIN = -(2n ** 63n), MASK = 2n ** 64n;
+function wrap64(x) { return BigInt.asIntN(64, x); }
+
+// --- Trap -----------------------------------------------------------------
+class Trap {
+  constructor(kind, msg) { this.kind = kind; this.msg = msg || ""; }
+  toString() { return this.msg ? `${this.kind}: ${this.msg}` : this.kind; }
+}
+
+// --- Lexer ----------------------------------------------------------------
+function lex(src) {
+  const toks = [];
+  let i = 0;
+  const kw = {let:"Let",fn:"Fn",if:"If",else:"Else",while:"While",return:"Return",true:"True",false:"False",nil:"Nil"};
+  while (i < src.length) {
+    const c = src[i];
+    if (c === " " || c === "\t" || c === "\r" || c === "\n") { i++; continue; }
+    if (c === "#") { while (i < src.length && src[i] !== "\n") i++; continue; }
+    if (c === "/" && src[i+1] === "/") { while (i < src.length && src[i] !== "\n") i++; continue; }
+    if (c >= "0" && c <= "9") {
+      let j = i; while (j < src.length && src[j] >= "0" && src[j] <= "9") j++;
+      toks.push({t:"Int", v: BigInt(src.slice(i, j))}); i = j; continue;
+    }
+    if (c === "_" || /[a-zA-Z]/.test(c)) {
+      let j = i; while (j < src.length && /[a-zA-Z0-9_]/.test(src[j])) j++;
+      const w = src.slice(i, j); i = j;
+      toks.push(kw[w] ? {t: kw[w]} : {t:"Ident", v: w}); continue;
+    }
+    if (c === '"') {
+      i++; let s = "";
+      while (true) {
+        if (i >= src.length) return {err: new Trap("Parse", "unterminated string")};
+        const ch = src[i];
+        if (ch === '"') { i++; break; }
+        if (ch === "\\") {
+          i++; const e = src[i];
+          const map = {n:"\n", t:"\t", r:"\r", "\\":"\\", '"':'"', "0":"\0"};
+          if (!(e in map)) return {err: new Trap("Parse", "bad escape")};
+          s += map[e]; i++;
+        } else { s += ch; i++; }
+      }
+      toks.push({t:"Str", v: s}); continue;
+    }
+    const two = src.slice(i, i+2);
+    const twoMap = {"==":"EqEq","!=":"NotEq","<=":"Le",">=":"Ge","&&":"AndAnd","||":"OrOr"};
+    if (twoMap[two]) { toks.push({t: twoMap[two]}); i += 2; continue; }
+    const oneMap = {"(":"LParen",")":"RParen","{":"LBrace","}":"RBrace","[":"LBracket","]":"RBracket",
+      ",":"Comma",";":"Semi",":":"Colon","=":"Assign","+":"Plus","-":"Minus","*":"Star","/":"Slash",
+      "%":"Percent","!":"Bang","<":"Lt",">":"Gt"};
+    if (oneMap[c]) { toks.push({t: oneMap[c]}); i++; continue; }
+    return {err: new Trap("Parse", `unexpected character '${c}'`)};
+  }
+  toks.push({t:"Eof"});
+  return {toks};
+}
+
+// --- Parser (depth-bounded) ----------------------------------------------
+function parse(toks, maxDepth) {
+  let pos = 0, depth = 0;
+  const peek = () => toks[pos];
+  const check = t => toks[pos].t === t;
+  const adv = () => { const x = toks[pos]; if (pos + 1 < toks.length) pos++; return x; };
+  const eat = t => check(t) ? (adv(), true) : false;
+  function expect(t, what) { if (!eat(t)) throw new Trap("Parse", `expected ${what}, found ${peek().t}`); }
+  function enter() { if (++depth > maxDepth) throw new Trap("Parse", `nesting too deep (limit ${maxDepth})`); }
+  function leave() { depth--; }
+  function ident() { if (check("Ident")) return adv().v; throw new Trap("Parse", "expected identifier"); }
+
+  function statement() { enter(); try { return statementInner(); } finally { leave(); } }
+  function statementInner() {
+    if (check("Let")) { adv(); const name = ident(); expect("Assign","'='"); const value = expression(); expect("Semi","';'"); return {s:"Let", name, value}; }
+    if (check("Fn")) { adv(); const name = ident(); expect("LParen","'('"); const params = [];
+      if (!check("RParen")) { do { params.push(ident()); } while (eat("Comma")); }
+      expect("RParen","')'"); const body = block(); return {s:"Func", def:{name, params, body}}; }
+    if (check("If")) { adv(); const cond = expression(); const then = block();
+      let els = null;
+      if (eat("Else")) els = check("If") ? [statement()] : block();
+      return {s:"If", cond, then, els}; }
+    if (check("While")) { adv(); const cond = expression(); const body = block(); return {s:"While", cond, body}; }
+    if (check("Return")) { adv(); let value = null; if (!check("Semi")) value = expression(); expect("Semi","';'"); return {s:"Return", value}; }
+    const e = expression(); expect("Semi","';'"); return {s:"Expr", e};
+  }
+  function block() { enter(); try {
+    expect("LBrace","'{'"); const body = [];
+    while (!check("RBrace") && !check("Eof")) body.push(statement());
+    expect("RBrace","'}'"); return body;
+  } finally { leave(); } }
+
+  function expression() { enter(); try { return assignment(); } finally { leave(); } }
+  function assignment() {
+    const lhs = logicOr();
+    if (check("Assign")) { adv(); const value = assignment();
+      if (lhs.e === "Ident" || lhs.e === "Index") return {e:"Assign", target: lhs, value};
+      throw new Trap("Parse", "invalid assignment target"); }
+    return lhs;
+  }
+  function binLevel(next, ops) { let lhs = next();
+    while (ops[peek().t]) { const op = ops[peek().t]; adv(); const rhs = next(); lhs = {e:"Binary", op, lhs, rhs}; }
+    return lhs; }
+  function logicOr() { let lhs = logicAnd(); while (check("OrOr")) { adv(); lhs = {e:"Logical", and:false, lhs, rhs: logicAnd()}; } return lhs; }
+  function logicAnd() { let lhs = equality(); while (check("AndAnd")) { adv(); lhs = {e:"Logical", and:true, lhs, rhs: equality()}; } return lhs; }
+  const equality = () => binLevel(comparison, {EqEq:"Eq", NotEq:"Ne"});
+  const comparison = () => binLevel(term, {Lt:"Lt", Gt:"Gt", Le:"Le", Ge:"Ge"});
+  const term = () => binLevel(factor, {Plus:"Add", Minus:"Sub"});
+  const factor = () => binLevel(unary, {Star:"Mul", Slash:"Div", Percent:"Rem"});
+  function unary() {
+    if (check("Minus")) { adv(); enter(); try { return {e:"Unary", op:"Neg", expr: unary()}; } finally { leave(); } }
+    if (check("Bang")) { adv(); enter(); try { return {e:"Unary", op:"Not", expr: unary()}; } finally { leave(); } }
+    return call();
+  }
+  function call() {
+    let expr = primary();
+    while (true) {
+      if (check("LParen")) { adv(); const args = [];
+        if (!check("RParen")) { do { args.push(expression()); } while (eat("Comma")); }
+        expect("RParen","')'"); expr = {e:"Call", callee: expr, args}; }
+      else if (check("LBracket")) { adv(); const index = expression(); expect("RBracket","']'"); expr = {e:"Index", target: expr, index}; }
+      else break;
+    }
+    return expr;
+  }
+  function primary() { enter(); try { return primaryInner(); } finally { leave(); } }
+  function primaryInner() {
+    const t = peek();
+    if (t.t === "Int") { adv(); return {e:"Int", v: t.v}; }
+    if (t.t === "Str") { adv(); return {e:"Str", v: t.v}; }
+    if (t.t === "True") { adv(); return {e:"Bool", v:true}; }
+    if (t.t === "False") { adv(); return {e:"Bool", v:false}; }
+    if (t.t === "Nil") { adv(); return {e:"Nil"}; }
+    if (t.t === "Ident") { adv(); return {e:"Ident", name: t.v}; }
+    if (t.t === "LParen") { adv(); const e = expression(); expect("RParen","')'"); return e; }
+    if (t.t === "LBracket") { adv(); const items = [];
+      if (!check("RBracket")) { do { items.push(expression()); } while (eat("Comma")); }
+      expect("RBracket","']'"); return {e:"Array", items}; }
+    if (t.t === "LBrace") { adv(); const entries = [];
+      if (!check("RBrace")) { do {
+        let key; const k = peek();
+        if (k.t === "Str" || k.t === "Ident") { key = k.v; adv(); } else throw new Trap("Parse", "expected map key");
+        expect("Colon","':'"); entries.push([key, expression()]);
+      } while (eat("Comma")); }
+      expect("RBrace","'}'"); return {e:"Map", entries}; }
+    throw new Trap("Parse", `unexpected ${t.t}`);
+  }
+
+  const program = [];
+  while (!check("Eof")) program.push(statement());
+  return program;
+}
+
+// --- Values ---------------------------------------------------------------
+const Nil = {t:"nil"};
+const mkBool = b => ({t:"bool", v:b});
+const mkInt = n => ({t:"int", v: wrap64(n)});
+const mkStr = s => ({t:"str", v:s});
+const mkArr = a => ({t:"arr", v:a});
+const mkMap = m => ({t:"map", v:m});
+function typeName(v) { return v.t; }
+function display(v) {
+  switch (v.t) {
+    case "nil": return "nil";
+    case "bool": return String(v.v);
+    case "int": return v.v.toString();
+    case "str": return v.v;
+    case "func": return `<fn ${v.def.name}>`;
+    case "arr": return "[" + v.v.map(repr).join(", ") + "]";
+    case "map": return "{" + [...v.v.entries()].map(([k,x]) => `${JSON.stringify(k)}: ${repr(x)}`).join(", ") + "}";
+  }
+}
+function repr(v) { return v.t === "str" ? JSON.stringify(v.v) : display(v); }
+function valueEq(a, b) {
+  if (a.t !== b.t) return false;
+  switch (a.t) {
+    case "nil": return true;
+    case "bool": case "str": return a.v === b.v;
+    case "int": return a.v === b.v;
+    case "arr": return a.v.length === b.v.length && a.v.every((x,i) => valueEq(x, b.v[i]));
+    case "map": { if (a.v.size !== b.v.size) return false;
+      for (const [k,x] of a.v) { if (!b.v.has(k) || !valueEq(x, b.v.get(k))) return false; } return true; }
+    case "func": return a.def === b.def;
+  }
+}
+function heapSize(v) {
+  switch (v.t) {
+    case "str": return v.v.length;
+    case "arr": return v.v.length * SLOT + v.v.reduce((s,x) => s + heapSize(x), 0);
+    case "map": { let s = 0; for (const [k,x] of v.v) s += k.length + SLOT + heapSize(x); return s; }
+    case "func": return SLOT;
+    default: return 0;
+  }
+}
+
+// --- Interpreter -----------------------------------------------------------
+class Return { constructor(v) { this.v = v; } }
+
+class Interp {
+  constructor(limits, grants, host) {
+    this.scopes = [new Map()];
+    this.bases = [0];
+    this.fuelLeft = limits.fuel; this.fuelBudget = limits.fuel;
+    this.mem = 0; this.maxMem = limits.mem;
+    this.callDepth = 0; this.maxDepth = limits.depth;
+    this.evalDepth = 0;
+    this.grants = grants; this.host = host;
+    this.last = Nil;
+  }
+  fuel(n) { if (this.fuelLeft < n) { this.fuelLeft = 0; throw new Trap("OutOfFuel", "step budget exhausted"); } this.fuelLeft -= n; }
+  charge(b) { if (this.mem + b > this.maxMem) { this.mem = this.maxMem; throw new Trap("OutOfMemory", "memory budget exhausted"); } this.mem += b; }
+  enter() { if (++this.evalDepth > EVAL_DEPTH_CAP) throw new Trap("StackOverflow", "call depth cap exceeded"); }
+  leave() { this.evalDepth--; }
+  base() { return this.bases[this.bases.length - 1]; }
+  resolveIdx(name) {
+    const base = this.base();
+    for (let i = this.scopes.length - 1; i >= base; i--) if (this.scopes[i].has(name)) return i;
+    if (base > 0 && this.scopes[0].has(name)) return 0;
+    return -1;
+  }
+  lookup(name) { const i = this.resolveIdx(name); return i < 0 ? null : this.scopes[i].get(name); }
+
+  runProgram(program) {
+    for (const st of program) {
+      const f = this.execStmt(st);
+      if (f instanceof Return) return f.v;
+      if (st.s === "Expr") this.last = this._lastExpr;
+    }
+    return this.last;
+  }
+  execBlock(body) {
+    this.enter(); this.scopes.push(new Map());
+    try {
+      for (const st of body) { const f = this.execStmt(st); if (f instanceof Return) return f; }
+      return null;
+    } finally { this.scopes.pop(); this.leave(); }
+  }
+  execStmt(st) {
+    this.fuel(1); this._lastExpr = null;
+    switch (st.s) {
+      case "Let": { const v = this.eval(st.value); this.charge(st.name.length + SLOT);
+        this.scopes[this.scopes.length - 1].set(st.name, v); return null; }
+      case "Expr": { this._lastExpr = this.eval(st.e); return null; }
+      case "Func": { this.charge(st.def.name.length + SLOT);
+        this.scopes[this.scopes.length - 1].set(st.def.name, {t:"func", def: st.def}); return null; }
+      case "If": { if (this.evalBool(st.cond)) return this.execBlock(st.then);
+        else if (st.els) return this.execBlock(st.els); return null; }
+      case "While": { while (true) { this.fuel(1); if (!this.evalBool(st.cond)) break;
+        const f = this.execBlock(st.body); if (f instanceof Return) return f; } return null; }
+      case "Return": return new Return(st.value ? this.eval(st.value) : Nil);
+    }
+  }
+  evalBool(e) { const v = this.eval(e); if (v.t !== "bool") throw new Trap("Type", `condition must be bool, got ${v.t}`); return v.v; }
+  eval(e) { this.fuel(1); this.enter(); try { return this.evalInner(e); } finally { this.leave(); } }
+  evalInner(e) {
+    switch (e.e) {
+      case "Nil": return Nil;
+      case "Bool": return mkBool(e.v);
+      case "Int": return mkInt(e.v);
+      case "Str": this.charge(e.v.length); return mkStr(e.v);
+      case "Ident": { const v = this.lookup(e.name); if (!v) throw new Trap("Name", `undefined name '${e.name}'`); return v; }
+      case "Array": { this.charge(e.items.length * SLOT); return mkArr(e.items.map(it => this.eval(it))); }
+      case "Map": { const m = new Map(); for (const [k, ve] of e.entries) { this.charge(k.length + SLOT); m.set(k, this.eval(ve)); } return mkMap(m); }
+      case "Unary": return this.unary(e.op, this.eval(e.expr));
+      case "Binary": { const a = this.eval(e.lhs), b = this.eval(e.rhs); return this.binary(e.op, a, b); }
+      case "Logical": { const a = this.evalBool(e.lhs);
+        if (e.and) return a ? mkBool(this.evalBool(e.rhs)) : mkBool(false);
+        return a ? mkBool(true) : mkBool(this.evalBool(e.rhs)); }
+      case "Index": return this.index(this.eval(e.target), this.eval(e.index));
+      case "Call": return this.call(e.callee, e.args);
+      case "Assign": { const v = this.eval(e.value); this.assignTo(e.target, v); return v; }
+    }
+  }
+  unary(op, v) {
+    if (op === "Neg") { if (v.t !== "int") throw new Trap("Type", `cannot negate ${v.t}`); return mkInt(-v.v); }
+    if (v.t !== "bool") throw new Trap("Type", `cannot apply '!' to ${v.t}`); return mkBool(!v.v);
+  }
+  binary(op, a, b) {
+    switch (op) {
+      case "Add": return this.add(a, b);
+      case "Sub": return this.intArith(a, b, (x,y) => x - y, "-");
+      case "Mul": return this.intArith(a, b, (x,y) => x * y, "*");
+      case "Div": return this.intArith(a, b, (x,y) => { if (y === 0n) throw new Trap("DivByZero","division or modulo by zero"); return divTrunc(x, y); }, "/");
+      case "Rem": return this.intArith(a, b, (x,y) => { if (y === 0n) throw new Trap("DivByZero","division or modulo by zero"); return remTrunc(x, y); }, "%");
+      case "Eq": return mkBool(valueEq(a, b));
+      case "Ne": return mkBool(!valueEq(a, b));
+      case "Lt": return this.order(a, b, o => o < 0);
+      case "Gt": return this.order(a, b, o => o > 0);
+      case "Le": return this.order(a, b, o => o <= 0);
+      case "Ge": return this.order(a, b, o => o >= 0);
+    }
+  }
+  add(a, b) {
+    if (a.t === "int" && b.t === "int") return mkInt(a.v + b.v);
+    if (a.t === "str" && b.t === "str") { const n = a.v.length + b.v.length; this.charge(n); return mkStr(a.v + b.v); }
+    if (a.t === "arr" && b.t === "arr") { const n = a.v.length + b.v.length; this.charge(n * SLOT); return mkArr(a.v.concat(b.v)); }
+    throw new Trap("Type", `cannot add ${a.t} and ${b.t}`);
+  }
+  intArith(a, b, f, sym) { if (a.t !== "int" || b.t !== "int") throw new Trap("Type", `cannot apply '${sym}' to ${a.t} and ${b.t}`); return mkInt(f(a.v, b.v)); }
+  order(a, b, pick) {
+    let o;
+    if (a.t === "int" && b.t === "int") o = a.v < b.v ? -1 : a.v > b.v ? 1 : 0;
+    else if (a.t === "str" && b.t === "str") o = a.v < b.v ? -1 : a.v > b.v ? 1 : 0;
+    else throw new Trap("Type", `cannot compare ${a.t} and ${b.t}`);
+    return mkBool(pick(o));
+  }
+  index(t, i) {
+    if (t.t === "arr" && i.t === "int") { const idx = norm(i.v, t.v.length); return t.v[idx]; }
+    if (t.t === "str" && i.t === "int") { const chars = [...t.v]; const idx = norm(i.v, chars.length); this.charge(chars[idx].length); return mkStr(chars[idx]); }
+    if (t.t === "map" && i.t === "str") { if (!t.v.has(i.v)) throw new Trap("Index", `missing key '${i.v}'`); return t.v.get(i.v); }
+    throw new Trap("Type", `cannot index ${t.t} with ${i.t}`);
+  }
+  call(callee, args) {
+    if (callee.e === "Ident" && BUILTINS.includes(callee.name) && this.resolveIdx(callee.name) < 0) return this.capability(callee.name, args);
+    const f = this.eval(callee);
+    if (f.t !== "func") throw new Trap("Type", `${f.t} is not callable`);
+    const argv = args.map(a => this.eval(a));
+    return this.callFunc(f.def, argv);
+  }
+  capability(name, args) {
+    if (!this.grants.has(name)) throw new Trap("CapabilityDenied", `'${name}' was not granted`);
+    this.fuel(1);
+    const argv = args.map(a => this.eval(a));
+    const r = this.host(name, argv);
+    this.charge(heapSize(r));
+    return r;
+  }
+  callFunc(def, args) {
+    if (args.length !== def.params.length) throw new Trap("Arity", `function '${def.name}' expects ${def.params.length} argument(s), got ${args.length}`);
+    this.callDepth++;
+    if (this.callDepth > this.maxDepth) { this.callDepth--; throw new Trap("StackOverflow", "call depth cap exceeded"); }
+    try { return this.runFrame(def, args); } finally { this.callDepth--; }
+  }
+  runFrame(def, args) {
+    this.charge(FRAME_BYTES + def.params.length * SLOT);
+    this.enter(); this.scopes.push(new Map()); this.bases.push(this.scopes.length - 1);
+    const base = this.scopes.length - 1;
+    def.params.forEach((p, k) => this.scopes[base].set(p, args[k]));
+    try { const f = this.execBlock(def.body); return f instanceof Return ? f.v : Nil; }
+    finally { this.bases.pop(); this.scopes.pop(); this.leave(); }
+  }
+  assignTo(target, val) {
+    if (target.e === "Ident") { const i = this.resolveIdx(target.name);
+      if (i < 0) throw new Trap("Name", `cannot assign to undefined name '${target.name}'`);
+      this.scopes[i].set(target.name, val); return; }
+    if (target.e === "Index") { const idx = this.eval(target.index); const container = this.eval(target.target);
+      this.setIndex(container, idx, val); this.assignTo(target.target, container); return; }
+    throw new Trap("Type", "invalid assignment target");
+  }
+  setIndex(c, i, val) {
+    if (c.t === "arr" && i.t === "int") { const idx = norm(i.v, c.v.length); c.v = c.v.slice(); c.v[idx] = val; return; }
+    if (c.t === "map" && i.t === "str") { const m = new Map(c.v); if (!m.has(i.v)) this.charge(i.v.length + SLOT); m.set(i.v, val); c.v = m; return; }
+    throw new Trap("Type", `cannot index-assign ${c.t} with ${i.t}`);
+  }
+  meter() { return { fuelUsed: this.fuelBudget - this.fuelLeft, memUsed: this.mem }; }
+}
+function divTrunc(x, y) { const q = x / y; return wrap64(q); }
+function remTrunc(x, y) { return wrap64(x % y); }
+function norm(i, len) { const bl = BigInt(len); let idx = i < 0n ? i + bl : i; if (idx < 0n || idx >= bl) throw new Trap("Index", `index ${i} out of range for length ${len}`); return Number(idx); }
+
+// --- Runner ---------------------------------------------------------------
+function runSandbox(src, limits, grantSet) {
+  const output = [];
+  const host = (name, args) => {
+    if (name === "print") { output.push(args.map(display).join(" ")); return Nil; }
+    if (name === "input") { return mkStr(""); }
+    if (name === "now") { return mkInt(0n); }
+    if (name === "len") { const a = args[0];
+      if (a.t === "str") return mkInt(BigInt([...a.v].length));
+      if (a.t === "arr") return mkInt(BigInt(a.v.length));
+      if (a.t === "map") return mkInt(BigInt(a.v.size));
+      throw new Trap("Type", `len expects string, array, or map, got ${a.t}`); }
+    throw new Trap("Internal", `no host handler for '${name}'`);
+  };
+  let interp = new Interp(limits, grantSet, host);
+  try {
+    const lr = lex(src);
+    if (lr.err) return { trap: lr.err, output, meter: {fuelUsed:0, memUsed:0} };
+    let program;
+    try { program = parse(lr.toks, 256); }
+    catch (t) { return { trap: t instanceof Trap ? t : new Trap("Parse", String(t)), output, meter: {fuelUsed:0, memUsed:0} }; }
+    interp.scopes[0].set("args", mkArr([]));
+    const value = interp.runProgram(program);
+    return { value, output, meter: interp.meter() };
+  } catch (t) {
+    const trap = t instanceof Trap ? t : new Trap("Internal", String(t && t.message || t));
+    return { trap, output, meter: interp.meter() };
+  }
+}
+
+// --- UI --------------------------------------------------------------------
+const PRESETS = {
+  "Normal program": `# Computes a Fibonacci number and returns it.
+fn fib(n) {
+  if n < 2 { return n; }
+  return fib(n - 1) + fib(n - 2);
+}
+let result = fib(20);
+print("fib(20) =", result);
+result;`,
+  "Infinite loop": `# No capabilities needed. Fuel runs out and the loop stops.
+let i = 0;
+while true {
+  i = i + 1;
+}`,
+  "Memory bomb": `# Doubles a string every step. Charged before allocation.
+let s = "xxxxxxxx";
+while true {
+  s = s + s;
+}`,
+  "Deep recursion": `# No base case. The call-depth cap stops it, not a crash.
+fn dig(n) {
+  return dig(n + 1);
+}
+dig(0);`,
+  "Capability escape": `# Tries to reach the host without a grant. Denied.
+print("trying to escape the sandbox");`
+};
+const PRESET_CAPS = {
+  "Normal program": ["print"],
+  "Infinite loop": [],
+  "Memory bomb": [],
+  "Deep recursion": [],
+  "Capability escape": []
+};
+// Each preset ships the limits that best show its point, just like passing
+// different --fuel / --mem / --depth flags to the CLI.
+const PRESET_LIMITS = {
+  "Normal program": { fuel: 2000000, mem: 16777216, depth: 512 },
+  "Infinite loop": { fuel: 200000, mem: 65536, depth: 128 },
+  "Memory bomb": { fuel: 200000, mem: 65536, depth: 128 },
+  "Deep recursion": { fuel: 2000000, mem: 16777216, depth: 128 },
+  "Capability escape": { fuel: 200000, mem: 65536, depth: 128 }
+};
+
+const $ = id => document.getElementById(id);
+const srcEl = $("src"), presetsEl = $("presets"), capsEl = $("caps");
+const capState = { print:true, input:false, now:false, len:false };
+
+function buildCaps() {
+  capsEl.innerHTML = "";
+  for (const name of BUILTINS) {
+    const label = document.createElement("label");
+    label.className = "cap";
+    const cb = document.createElement("input");
+    cb.type = "checkbox"; cb.checked = capState[name];
+    cb.addEventListener("change", () => { capState[name] = cb.checked; });
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(name));
+    capsEl.appendChild(label);
+  }
+}
+function buildPresets() {
+  for (const name of Object.keys(PRESETS)) {
+    const b = document.createElement("button");
+    b.className = "preset"; b.textContent = name; b.type = "button";
+    b.addEventListener("click", () => {
+      srcEl.value = PRESETS[name];
+      for (const c of BUILTINS) capState[c] = PRESET_CAPS[name].includes(c);
+      const lim = PRESET_LIMITS[name];
+      $("fuel").value = lim.fuel; $("mem").value = lim.mem; $("depth").value = lim.depth;
+      buildCaps();
+      run();
+    });
+    presetsEl.appendChild(b);
+  }
+}
+function setMeter(fillId, valId, used, budget, unit) {
+  const pct = budget > 0 ? Math.min(100, (used / budget) * 100) : 0;
+  const fill = $(fillId); fill.style.width = pct + "%";
+  fill.classList.toggle("hot", pct >= 99.5);
+  $(valId).textContent = `${used.toLocaleString()} / ${budget.toLocaleString()}${unit}`;
+}
+function run() {
+  const limits = { fuel: Number($("fuel").value)||0, mem: Number($("mem").value)||0, depth: Math.max(1, Number($("depth").value)||1) };
+  const grants = new Set(BUILTINS.filter(c => capState[c]));
+  const res = runSandbox(srcEl.value, limits, grants);
+  const v = $("verdict");
+  if (res.trap) {
+    v.className = "verdict trap";
+    v.innerHTML = `<span class="k">trap</span> ${escapeHtml(res.trap.toString())}`;
+  } else {
+    v.className = "verdict ok";
+    v.innerHTML = `<span class="k">=&gt;</span> ${escapeHtml(display(res.value))}`;
+  }
+  setMeter("fuelFill", "fuelVal", res.meter.fuelUsed, limits.fuel, "");
+  setMeter("memFill", "memVal", res.meter.memUsed, limits.mem, " bytes");
+  const out = $("output");
+  if (res.output.length) out.textContent = res.output.join("\n");
+  else out.innerHTML = '<span class="empty">No output. Grant print and call it to see lines here.</span>';
+}
+function escapeHtml(s) { return s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+// theme toggle
+$("themeToggle").addEventListener("click", () => {
+  const current = document.documentElement.getAttribute("data-theme");
+  const isDark = current ? current === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const next = isDark ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  document.body.setAttribute("data-theme", next);
+});
+
+buildPresets();
+buildCaps();
+srcEl.value = PRESETS["Normal program"];
+{
+  const lim = PRESET_LIMITS["Normal program"];
+  $("fuel").value = lim.fuel; $("mem").value = lim.mem; $("depth").value = lim.depth;
+}
+$("run").addEventListener("click", run);
+run();
+</script>
 </body>
 </html>
