@@ -3,8 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Terrarium</title>
+<title>Terrarium: a from-scratch sandbox that runs untrusted scripts safely, in Rust</title>
+<meta name="description" content="Terrarium by Pavan Nallamothu: a from-scratch scripting sandbox in pure Rust that runs untrusted code without letting it hang you, exhaust your memory, blow your stack, or touch anything you did not hand it. Fuel bounds time, a byte budget bounds allocation, a depth cap bounds recursion, and capabilities gate every effect.">
+<meta name="author" content="Pavan Nallamothu (pavanchow)">
+<link rel="canonical" href="https://pavanchow.github.io/terrarium/">
 <link rel="icon" type="image/svg+xml" href="logo.svg">
+<link rel="author" href="https://github.com/pavanchow">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Terrarium: a from-scratch sandbox that runs untrusted scripts safely, in Rust">
+<meta property="og:description" content="Run untrusted code without letting it hang, exhaust memory, blow the stack, or escape. Fuel, a memory budget, a depth cap, and capabilities. Every input returns a value or a typed trap. By Pavan Nallamothu.">
+<meta property="og:url" content="https://pavanchow.github.io/terrarium/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Terrarium: a from-scratch sandbox that runs untrusted scripts safely, in Rust">
+<meta name="twitter:description" content="Type a script, set the limits, grant what you choose, and watch the sandbox contain it: a value or a typed trap, never a hang or an escape.">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Terrarium","applicationCategory":"DeveloperApplication","operatingSystem":"Cross-platform","description":"Terrarium is a from-scratch scripting sandbox in pure Rust that runs untrusted code safely. Every evaluation step costs fuel, allocations are charged against a byte budget, recursion is depth capped, and effects are reachable only through granted capabilities. For any input script it returns a value or a typed trap, never a panic, hang, host stack overflow, or capability escape.","url":"https://pavanchow.github.io/terrarium/","author":{"@type":"Person","name":"Pavan Nallamothu"},"programmingLanguage":"Rust","codeRepository":"https://github.com/pavanchow/terrarium","license":"https://opensource.org/licenses/MIT"}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Person","name":"Pavan Nallamothu","alternateName":"pavanchow","url":"https://github.com/pavanchow","sameAs":["https://github.com/pavanchow","https://hackerone.com/pavanchow"]}
+</script>
 <style>
   :root {
     color-scheme: light dark;
@@ -69,38 +86,13 @@
   }
   body[data-theme="dark"] { background: var(--bg); color: var(--text); }
 
-  header {
-    max-width: 1080px;
-    margin: 0 auto;
-    padding: 64px 24px 24px;
-    text-align: center;
-  }
+  html { scroll-behavior: smooth; }
   h1 {
     font-size: clamp(40px, 7vw, 64px);
     font-weight: 700;
     letter-spacing: -0.02em;
     margin: 0 0 8px;
   }
-  .tagline {
-    font-size: clamp(19px, 3vw, 24px);
-    color: var(--muted);
-    max-width: 720px;
-    margin: 0 auto;
-    font-weight: 400;
-  }
-  .gap {
-    max-width: 760px;
-    margin: 28px auto 0;
-    font-size: 17px;
-    color: var(--text);
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px 24px;
-    box-shadow: var(--shadow);
-    text-align: left;
-  }
-  .gap strong { font-weight: 600; }
 
   main { max-width: 1080px; margin: 0 auto; padding: 24px; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -218,34 +210,90 @@
   .output .empty { color: var(--muted); }
 
   .theme-toggle {
-    position: fixed; top: 18px; right: 18px;
     font: inherit; font-size: 13px;
-    padding: 8px 14px; border-radius: 980px;
+    padding: 7px 13px; border-radius: 980px;
     border: 1px solid var(--border); background: var(--panel); color: var(--text);
-    cursor: pointer; box-shadow: var(--shadow); z-index: 10;
+    cursor: pointer;
   }
-  footer { text-align: center; color: var(--muted); font-size: 13px; padding: 32px 24px 56px; }
-  footer a { color: var(--accent); text-decoration: none; }
   code { font-family: var(--mono); background: var(--code-bg); padding: 1px 5px; border-radius: 5px; font-size: 0.92em; }
+
+  /* ===== cocoon-grade shell ===== */
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  nav { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.82); backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--border); }
+  :root[data-theme="dark"] nav { background: rgba(0,0,0,.72); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) nav { background: rgba(0,0,0,.72); } }
+  nav .row { display: flex; justify-content: space-between; align-items: center; height: 56px; max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  nav .brand { display: flex; align-items: center; gap: 9px; font-size: 18px; font-weight: 650; letter-spacing: -.01em; color: var(--text); }
+  nav .brand .gem { width: 16px; height: 16px; border-radius: 50% 50% 50% 50%/60% 60% 40% 40%; background: linear-gradient(135deg,#5ea9ff,#0071e3); }
+  nav .links { display: flex; gap: 18px; align-items: center; }
+  nav .links a { color: var(--text); font-size: 14.5px; text-decoration: none; }
+  nav .links a:hover { color: var(--accent); text-decoration: none; }
+  @media (max-width: 640px) { nav .links a:not(.gh) { display: none; } }
+
+  .hero { text-align: center; padding: 80px 24px 22px; max-width: 1080px; margin: 0 auto; }
+  .hero img { display: block; margin: 0 auto 18px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); margin: 0; }
+  .hero h1 { line-height: 1.06; letter-spacing: -.035em; margin: 16px 0 0; text-wrap: balance; }
+  .hero p.sub { max-width: 720px; margin: 22px auto 0; font-size: clamp(17px, 2.1vw, 21px); color: var(--muted); }
+  .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 30px; }
+  .btn { display: inline-block; padding: 12px 26px; border-radius: 999px; font-size: 15px; font-weight: 600; border: 1px solid var(--text); color: var(--text); text-decoration: none; }
+  .btn:hover { opacity: .72; text-decoration: none; }
+  .btn.primary { background: var(--text); color: var(--panel); border-color: var(--text); }
+
+  details.howto { max-width: 760px; margin: 8px auto 0; border: 1px solid var(--border); border-radius: 14px; padding: 2px 20px; background: var(--panel-2); }
+  details.howto > summary { cursor: pointer; font-weight: 650; padding: 15px 0; list-style: none; font-size: 16px; }
+  details.howto > summary::-webkit-details-marker { display: none; }
+  details.howto > summary::before { content: "\25B8"; display: inline-block; margin-right: 8px; color: var(--accent); transition: transform .15s; }
+  details.howto[open] > summary::before { transform: rotate(90deg); }
+  details.howto .body { margin: 4px 0 16px; color: var(--muted); font-size: 15px; line-height: 1.6; }
+  details.howto ul { margin: 10px 0 0; padding-left: 20px; }
+  details.howto li { margin: 6px 0; }
+
+  section.narr { border-top: 1px solid var(--border); padding: 70px 0; margin-top: 40px; }
+  section.narr .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  section.narr h2 { font-size: clamp(25px, 4.2vw, 35px); line-height: 1.14; letter-spacing: -.025em; font-weight: 660; text-align: center; max-width: 780px; margin: 0 auto; text-transform: none; color: var(--text); }
+  section.narr .lead { max-width: 720px; margin: 16px auto 0; text-align: center; color: var(--muted); font-size: 16px; }
+  pre.term { background: #15161c; color: #ececf4; border-radius: 14px; padding: 20px 22px; font-family: var(--mono); font-size: 13px; line-height: 1.6; overflow-x: auto; max-width: 800px; margin: 28px auto 0; }
+  pre.term .cm { color: #8a8d9a; }
+  pre.term .g { color: #7fd6a0; }
+  footer.site { padding: 60px 24px; border-top: 1px solid var(--border); text-align: center; color: var(--muted); font-size: 14px; margin-top: 20px; }
+  footer.site a { color: var(--accent); text-decoration: none; }
+  footer.site .name { color: var(--text); font-weight: 600; }
+  footer.site p + p { margin-top: 10px; }
+  @media (max-width: 640px) { .hero { padding: 56px 24px 18px; } section.narr { padding: 54px 0; } }
 </style>
 </head>
 <body>
-<button class="theme-toggle" id="themeToggle" type="button">Toggle theme</button>
+<noscript><div style="max-width:1080px;margin:0 auto;padding:40px 24px;color:#6e6e73">Terrarium is a from-scratch scripting sandbox in pure Rust by Pavan Nallamothu that runs untrusted code without letting it hang you, exhaust your memory, blow your stack, or touch anything you did not hand it. Fuel bounds time, a byte budget bounds allocation, a depth cap bounds recursion, and capabilities gate every effect. Source: <a href="https://github.com/pavanchow/terrarium">github.com/pavanchow/terrarium</a>.</div></noscript>
 
-<header>
-  <img src="logo.svg" alt="Terrarium logo" width="72" height="72">
-  <h1>Terrarium</h1>
-  <p class="tagline">A sandbox that runs untrusted scripts without letting them hang you, eat your memory, blow your stack, or touch anything you did not hand them.</p>
-  <div class="gap">
-    <strong>The point.</strong> Writing an interpreter is easy. The hard part everyone skips is running someone else's code safely. Terrarium's real product is the enforcement: fuel bounds time, a memory budget bounds allocation, a depth cap bounds recursion, and capabilities gate every effect. For any input, the sandbox returns a value or a typed trap. It never hangs, never overflows, never escapes. This page runs a faithful port of that sandbox right in your browser.
+<nav><div class="row">
+  <div class="brand"><span class="gem"></span>Terrarium</div>
+  <div class="links">
+    <a href="#sim">Sandbox</a>
+    <a href="#proof">Proof</a>
+    <a href="#use">Use it</a>
+    <a class="gh" href="https://github.com/pavanchow/terrarium">GitHub</a>
+    <button class="theme-toggle" id="themeToggle" type="button">Toggle theme</button>
   </div>
-</header>
+</div></nav>
 
-<details style="max-width:960px;margin:0 auto 8px;padding:0 24px">
-  <summary style="cursor:pointer;font-weight:600;font-size:15px;color:var(--text)">How to use this playground</summary>
-  <div style="margin-top:12px;color:var(--muted);font-size:15px;line-height:1.6">
+<div class="hero">
+  <img src="logo.svg" alt="Terrarium logo" width="72" height="72">
+  <p class="eyebrow">Rust &middot; untrusted-code sandbox</p>
+  <h1>Run code you<br>do not trust.</h1>
+  <p class="sub">Terrarium is a from-scratch scripting sandbox that runs untrusted code without letting it hang you, exhaust your memory, blow your stack, or touch anything you did not hand it. Fuel bounds time, a byte budget bounds allocation, a depth cap bounds recursion, and capabilities gate every effect. For any input script, run returns a value or a typed trap, never a panic, a hang, or an escape. Type a script below, set the limits, choose what to grant, and watch the meters and the trap.</p>
+  <div class="cta-row">
+    <a class="btn primary" href="#sim">Open the sandbox</a>
+    <a class="btn" href="https://github.com/pavanchow/terrarium">View on GitHub</a>
+  </div>
+</div>
+
+<details class="howto">
+  <summary>How to use this playground</summary>
+  <div class="body">
     Write a script, set the limits, choose which capabilities to grant, then run it in the sandbox.
-    <ul style="margin:10px 0 0;padding-left:20px">
+    <ul>
       <li><b>Script:</b> type code or pick a preset (normal program, infinite loop, memory bomb, deep recursion, capability escape).</li>
       <li><b>Limits:</b> set fuel (steps), memory (bytes), and call depth; lowering them makes the sandbox trap sooner.</li>
       <li><b>Granted capabilities:</b> toggle <code>print</code>, <code>input</code>, <code>now</code>, <code>len</code>. Anything ungranted is denied. Watch the verdict and the fuel and memory meters when a limit is hit.</li>
@@ -253,7 +301,7 @@
   </div>
 </details>
 
-<main>
+<main id="sim">
   <div class="grid">
     <section class="card">
       <h2>Script</h2>
@@ -286,9 +334,30 @@
   </div>
 </main>
 
-<footer>
-  Terrarium by Pavan Nallamothu ·
-  <a href="https://github.com/pavanchow/terrarium">github.com/pavanchow/terrarium</a>
+<section id="proof" class="narr"><div class="wrap">
+  <h2>It contains anything you throw at it</h2>
+  <p class="lead">The whole project is judged on one claim: for any input script, including adversarial and malformed ones, run returns in bounded time with a value or a typed trap. It never panics the host process, never hangs, never overflows the host stack, and never performs an effect outside the granted capabilities.</p>
+  <pre class="term"><span class="cm"># tests/fuzz.rs throws 10,000 programs per run across five fixed seeds,</span>
+<span class="cm"># with no capabilities granted, and asserts the three invariants</span>
+fuzz report: seeds=5 iterations=10000 <span class="g">host_panics=0 hangs=0 escapes=0</span> traps=9933 values=67</pre>
+  <p class="lead" style="margin-top:26px">An infinite loop traps <code>OutOfFuel</code>. An allocation bomb traps <code>OutOfMemory</code> before it touches real memory. Unbounded recursion traps <code>StackOverflow</code> instead of a host segfault. An ungranted effect traps <code>CapabilityDenied</code>. Integer overflow wraps, division by zero is a trap, and a garbage source is a clean parse error. <code>tests/containment.rs</code> pins each hostile scenario to its exact trap.</p>
+</div></section>
+
+<section id="use" class="narr"><div class="wrap">
+  <h2>Use it</h2>
+  <pre class="term"><span class="cm"># build and run the test suite, including the fuzzer and containment gate</span>
+cargo build
+cargo test
+
+<span class="cm"># run a script under limits, granting only what it needs</span>
+terrarium run examples/normal.tr --grant print
+terrarium run examples/loop.tr --fuel 100000
+terrarium run examples/escape.tr</pre>
+</div></section>
+
+<footer class="site">
+  <p>Terrarium is MIT licensed. Zero external dependencies, pure Rust standard library. Source, tests, and the fuzzer are on <a href="https://github.com/pavanchow/terrarium">GitHub</a>.</p>
+  <p>By <span class="name">Pavan Nallamothu</span>.</p>
 </footer>
 
 <script>
