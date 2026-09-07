@@ -1,3 +1,5 @@
+<img src="docs/logo.svg" alt="Terrarium logo" width="96">
+
 # Terrarium
 
 A from-scratch scripting sandbox that runs untrusted code without letting it hang you, exhaust your memory, blow your stack, or touch anything you did not hand it.

@@ -1,0 +1,7 @@
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Terrarium logo">
+  <path d="M32 96 V60 a32 32 0 0 1 64 0 V96 Z" fill="#3a9d6b" fill-opacity="0.14" stroke="#3a9d6b" stroke-width="6" stroke-linejoin="round"/>
+  <rect x="26" y="96" width="76" height="14" rx="5" fill="#3a9d6b"/>
+  <path d="M64 92 V66" stroke="#2ea36b" stroke-width="6" stroke-linecap="round"/>
+  <path d="M64 74 q-16 -2 -18 -18 q16 2 18 18" fill="#5bc98e"/>
+  <path d="M64 68 q16 -2 18 -18 q-16 2 -18 18" fill="#5bc98e"/>
+</svg>

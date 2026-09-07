@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Terrarium</title>
+<link rel="icon" type="image/svg+xml" href="logo.svg">
 <style>
   :root {
     color-scheme: light dark;
@@ -232,12 +233,25 @@
 <button class="theme-toggle" id="themeToggle" type="button">Toggle theme</button>
 
 <header>
+  <img src="logo.svg" alt="Terrarium logo" width="72" height="72">
   <h1>Terrarium</h1>
   <p class="tagline">A sandbox that runs untrusted scripts without letting them hang you, eat your memory, blow your stack, or touch anything you did not hand them.</p>
   <div class="gap">
     <strong>The point.</strong> Writing an interpreter is easy. The hard part everyone skips is running someone else's code safely. Terrarium's real product is the enforcement: fuel bounds time, a memory budget bounds allocation, a depth cap bounds recursion, and capabilities gate every effect. For any input, the sandbox returns a value or a typed trap. It never hangs, never overflows, never escapes. This page runs a faithful port of that sandbox right in your browser.
   </div>
 </header>
+
+<details style="max-width:960px;margin:0 auto 8px;padding:0 24px">
+  <summary style="cursor:pointer;font-weight:600;font-size:15px;color:var(--text)">How to use this playground</summary>
+  <div style="margin-top:12px;color:var(--muted);font-size:15px;line-height:1.6">
+    Write a script, set the limits, choose which capabilities to grant, then run it in the sandbox.
+    <ul style="margin:10px 0 0;padding-left:20px">
+      <li><b>Script:</b> type code or pick a preset (normal program, infinite loop, memory bomb, deep recursion, capability escape).</li>
+      <li><b>Limits:</b> set fuel (steps), memory (bytes), and call depth; lowering them makes the sandbox trap sooner.</li>
+      <li><b>Granted capabilities:</b> toggle <code>print</code>, <code>input</code>, <code>now</code>, <code>len</code>. Anything ungranted is denied. Watch the verdict and the fuel and memory meters when a limit is hit.</li>
+    </ul>
+  </div>
+</details>
 
 <main>
   <div class="grid">
